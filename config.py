@@ -1,0 +1,5 @@
+DB_NAME = 'vocabReminder'
+
+USERS_COLLECTION_NAME = 'users'
+FLASHCARDS_COLLECTION_NAME = 'flashcards'
+REMINDERS_COLLECTION_NAME = 'reminders'

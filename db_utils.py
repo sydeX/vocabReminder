@@ -1,4 +1,6 @@
 import logging
+import json
+from collections import namedtuple
 from pymongo import MongoClient
 
 
@@ -16,13 +18,26 @@ class DBClient:
 
         logging.info("Dropped DB %s" % db_name)
 
-    def write(self, collection_name, key, content):
+    def write_or_update(self, collection_name, key, content):
         collection = self.db[collection_name]
+        result_id = None
 
         if collection.find(key).count() > 0:
-            raise('{key} already exist in {collection}!'.format(key=key, collection=collection))
-
-        result = collection.insert_one(content)
-        logging.info('Added {key} into {collection}. ID: {id}'.format(key=key,
+            logging.info('{key} already exist in {collection}!'.format(key=key, collection=collection))
+            collection.update_one(key, {"$set": content, "$currentDate": {"lastModified": True}})
+            logging.info('Updated {key} in {collection}.'.format(key=key, collection=collection))
+        else:
+            result_id = collection.insert_one(content).inserted_id
+            logging.info('Added {key} into {collection}. ID: {id}'.format(key=key,
                                                                       collection=collection,
-                                                                      id=result.inserted_id))
+                                                                      id=result_id))
+
+        return result_id
+
+    def find(self, collection_name, key):
+        collection = self.db[collection_name]
+        return collection.find(key)
+
+def json_decoder(cls, data):
+    data.pop('id')
+    return cls(**data)
